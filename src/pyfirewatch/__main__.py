@@ -37,8 +37,9 @@ def main(argv: list[str]):
 
     parser.add_argument('-l', '--logfile', type=str, default="logs/PyFireWatch.log", required=False, help="The filepath that the daemon will use to log it's activity")
     parser.add_argument('-d', '--dumpfile', type=str, default="logs/PyFireWatch_subcommands_dump.log", required=False, help="The filepath that the commands executed by the daemon will log into")
-    parser.add_argument('watches', type=str, help="Watch patterns such as \"<dirpath>,[<event1>, ...], <command>\", where the possible events are \"CREATED\", \"MODIFIED\", \"DELETED\", example: \"/tmp,[CREATED,MODIFIED],echo newfile at %r\"", nargs='+')
+    parser.add_argument('-c', '--config', type=argparse.FileType('r'), help="Pass a file containing watches \"<dirpath>,[<event1>, ...], <command>\" patterns on each line for the configuration", required=False)
     parser.add_argument('-v', '--verbose', action='store_true', help="Turn on the debug logs of the prorgam", default=False)
+    parser.add_argument('watches', type=str, help="Watch patterns such as \"<dirpath>,[<event1>, ...], <command>\", where the possible events are \"CREATED\", \"MODIFIED\", \"DELETED\", example: \"/tmp,[CREATED,MODIFIED],echo newfile at %r\"", nargs='*')
 
     args = parser.parse_args(argv[1:])
 
@@ -55,6 +56,14 @@ def main(argv: list[str]):
             logging.StreamHandler()
         ],
     )
+
+    if args.config:
+        file_watchers: list[str] = args.config.readlines()
+        args.watches = file_watchers + args.watches
+
+    if len(args.watches) == 0:
+        print('Error: no watchers configuration set, nor from files or arguments.', file=sys.stderr)
+        exit(1)
 
     watches: dict[str, PyFireWatchEntry] = {}
 

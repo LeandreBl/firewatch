@@ -119,16 +119,16 @@ class PyFireWatch:
             if not os.path.exists(realpath):
                 os.makedirs(realpath)
             self.to_watch[realpath] = value
-            logging.debug(f'Watching \"{realpath}\" for event{"s" if len(value.events) > 1 else ""} {value.events} with action \"{value.action.command}\"')
+            logging.info(f'Watching \"{realpath}\" for event{"s" if len(value.events) > 1 else ""} {value.events} with action \"{value.action.command}\"')
 
     def sub_process_execute(self, entry: PyFireWatchEntry, realpath: str, event: PyFireWatchEvent):
         pid = os.fork()
         command: str = entry.action.format(DEFAULT_PRINTF_FORMAT_MATRIX, realpath, event)
-        logging.debug(f'Executing \"{command}\" on process {pid}')
         if pid == 0:
             exit_code = entry.execute(command, self.subcommand_dumpfile)
             exit(exit_code)
         else:
+            logging.info(f'Executing \"{command}\" on process {pid}')
             self.childrens_pids.append(pid)
             pids: list[int] = self.childrens_pids
             for p in pids:
@@ -136,7 +136,7 @@ class PyFireWatch:
                     pid, status = os.waitpid(p, os.WNOHANG)
                     if pid == p:
                         self.childrens_pids.remove(p)
-                        logging.debug(f'Process {pid} finished with exit code {os.WEXITSTATUS(status)}')
+                        logging.info(f'Process {pid} finished with exit code {os.WEXITSTATUS(status)}')
                 except:
                     logging.error(f"Failed to waitpid, no child process {p}")
                     pass
